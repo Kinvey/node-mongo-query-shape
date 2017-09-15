@@ -1,0 +1,21 @@
+{
+  "name": "mongo-query-shape",
+  "version": "0.0.1",
+  "main": "mongo-query-shape.js",
+  "description": "find the abstract shape of a mongo query",
+  "author": "Andras",
+  "license": "Apache-2.0",
+  "keywords": [
+    "mongodb", "query", "Andras", "abstract", "shape"
+  ],
+  "repository": "git://github.com/andrasq/node-mongo-query-shape",
+  "dependencies": {
+  },
+  "devDependencies": {
+  },
+  "scripts": {
+    "test": "",
+    "coverage": "",
+    "clean": ""
+  }
+}
