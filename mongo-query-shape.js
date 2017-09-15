@@ -45,8 +45,9 @@ function queryShape( query, options ) {
         shape[key] = shapeNames[match];
     }
 
-    return shape;
+    return sortShape(shape);
 }
+
 
 // given a condition { key: { ... value ... } }, determine the shape of value
 function valueShape( value, shapeNames ) {
@@ -89,9 +90,26 @@ function valueShape( value, shapeNames ) {
     return shapeNames[shape];
 }
 
+// return the fields in a normalized order, to make {a:1,b:2} and {b:2,a:1} the same
+function sortShape( shape ) {
+    var keys = Object.keys(shape);
+    var sortedShape = {};
+
+    keys.sort();
+
+    for (var i=0; i<keys.length; i++) {
+        var key = keys[i];
+        sortedShape[key] = shape[key];
+    }
+
+    return sortedShape;
+}
+
+
 // /** quicktest:
 
 var tests = [
+    { b: 2, c: 3, a: 1 },
     { x: 3 },
     { x: {$gt: 2} },
     { x: {$ne: 2} },
