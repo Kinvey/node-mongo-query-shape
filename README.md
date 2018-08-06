@@ -1,5 +1,7 @@
 mongo-query-shape
 =================
+[![Build Status](https://api.travis-ci.org/andrasq/node-mongo-query-shape.svg?branch=master)](https://travis-ci.org/andrasq/node-mongo-query-shape)
+[![Coverage Status](https://codecov.io/github/andrasq/node-mongo-query-shape/coverage.svg?branch=master)](https://codecov.io/github/andrasq/node-mongo-query-shape?branch=master)
 
 Determine the "shape" of a mongo query, to help identify queries that are the same
 other than the specific values being looked for.
