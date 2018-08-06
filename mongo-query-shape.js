@@ -1,7 +1,7 @@
 /**
  * find mongo query abstract shape
  *
- * Copyright (C) 2017 Andras Radics
+ * Copyright (C) 2017-2018 Andras Radics
  * Licensed under the Apache License, Version 2.0
  *
  * 2017-09-15 AR.
@@ -10,9 +10,10 @@
 'use strict'
 
 
-var EXACT = 'EXACT';            // value needs exact match, can direct lookup
+// shape names.  Note that they sort by restrictiveness
+var EXACT = 'EXACT';            // value needs exact match, can indexed lookup
 var RANGE = 'RANGE';            // value must fall within range, can walk index
-var TEST = 'TEST';              // value is tested, must check every doc
+var TEST = 'TEST';              // value is tested, must scan every doc
 
 module.exports = queryShape;
 module.exports.isSame = function isSame( shape1, shape2 ) {
@@ -20,10 +21,19 @@ module.exports.isSame = function isSame( shape1, shape2 ) {
     catch (err) { return false }
 }
 
+var Symbol = (typeof Symbol === 'undefined') && String || global.Symbol;
+
+/*
+ * analyze the mongo query and return its essential shape.
+ * Queries with the same shape are the same other than the specific values being looked for.
+ */
 function queryShape( query, options ) {
     options = options || {};
     // TODO: options.flatten - simplify and normalize the shape of the query, eg {} == $and:[{}] == $or:[{}]
     // TODO: options.minimize - abstract and-lists and or-lists to a single shape
+
+    // sanity test the query, it should be an object
+    if (!query || typeof query !== 'object') return 'EXACT';
 
     var shape = {};
     var shapeNames = options.shapes || { EXACT: 'EXACT', RANGE: 'RANGE', TEST: 'TEST' };
@@ -32,68 +42,142 @@ function queryShape( query, options ) {
         var value = query[key];
         var match;
 
-        switch (true) {
-        case Array.isArray(value):
-        case value === null:
-            match = EXACT;
-            break;
-        case value instanceof RegExp:
-            match = TEST;
-            break;
-        case value instanceof Object:
-            match = valueShape(value, shapeNames);
-            break;
-        default:
-            match = EXACT;
-            break;
+        if (key === '$and') {
+            match = new Array(value.length);
+            for (var i=0; i<value.length; i++) match[i] = queryShape(value[i], options);
+            shape[key] = match;
         }
 
-        shape[key] = shapeNames[match];
+        else if (key === '$or' || key === '$nor') {
+            match = new Array(value.length);
+            for (var i=0; i<value.length; i++) match[i] = queryShape(value[i], options);
+            shape[key] = match;
+        }
+
+        else if (key === '$query') {
+            // mongod ignores other conditions if a top-level $query is present
+            // our query shape includes them, however
+            shape[key] = queryShape(query[key], options);
+        }
+
+        else if (key === '$where') {
+            // TODO: not supported
+        }
+
+        else if (key === '$orderby') {
+            // TODO: sort fields are also examined and benefit from indexing
+            shape[key] = queryShape(query[key], options);
+        }
+
+        else if (key[0] === '$') {
+            // TODO: other $ keywords not supported
+            match = valueShape(value, options);
+        }
+
+        else {
+            switch (true) {
+            case value instanceof RegExp:
+                match = TEST;
+                break;
+            case [ Boolean, Number, String, Symbol, Date ].indexOf(value.constructor) >= 0:
+                match = EXACT;
+                break;
+            case value && typeof value === 'object':
+                var keys = Object.keys(value);
+                match = valueShape(value, options);
+                break;
+            default:
+                match = EXACT;
+                break;
+            }
+
+            // match is either a shape name, or an object
+            shape[key] = shapeNames[match] || match;
+        }
     }
 
     return sortShape(shape);
 }
 
 
-// given a condition { key: { ... value ... } }, determine the shape of value
-function valueShape( value, shapeNames ) {
+/*
+ * given a value = { k1: v1, k2: v2, ... }, determine the shape of value
+ * If any of the v1, v2, ... are a nested object, the shape will be a tree.
+ * If all the v1, v2, ... are $-keyword tests, the shape will be shape name.
+ * All properties of value must hold, so the shape is the most condition requiring the most work.
+ * Conveniently, the shape names 'exact', 'range' and 'test' sort by restrictiveness.
+ */
+function valueShape( value, options ) {
     var keys = Object.keys(value);
+    var shape = {}, hasSubtree = false;
 
-    var shape = TEST;
+    var minMax = {
+        min: 'ZZZZ',
+        max: '',
+        update: function(shape) {
+            if (shape < this.min) this.min = shape;
+            if (shape > this.max) this.max = shape;
+        }
+    };
 
-    // all properties of value must hold, so the shape is the most restrictive condition
-    // Conveniently, the shape names 'exact', 'range' and 'test' sort into precendence order.
     for (var i=0; i<keys.length; i++) {
         var key = keys[i];
 
-        switch (true) {
-        case key === '$eq':
-        case key === '$in':         // { x: {$in: [1, 2, 3]} }
-            if (EXACT < shape) shape = EXACT;
+        if (key[0] === '$') switch (key) {
+        case '$eq':
+        case '$in':             // { x: {$in: [1, 2, 3]} }
+            // conditions that can use an indexed lookup
+            shape[key] = EXACT;
+            minMax.update(shape[key]);
             break;
-        case key === '$lt':
-        case key === '$lte':
-        case key === '$gt':
-        case key === '$gte':
-        case key === '$exists':
-            if (RANGE < shape) shape = RANGE;
+        case '$lt':
+        case '$lte':
+        case '$gt':
+        case '$gte':
+        case '$exists':
+        case '$ne':
+        case '$nin':
+            // conditions that can use an index scan
+            shape[key] = RANGE;
+            minMax.update(shape[key]);
             break;
-        case key === '$ne':
-        case key === '$nin':
-        case key === '$regex':          
-        case key === '$all':            // { arr: {$all: [1, 2, 3]} }
-        case key === '$size':           // { arr: {$size: 3} } => arr.length == 3
-        case key === '$not':            // { x: {$not: {$eq: 1}} } => x != 1
-        case key === '$mod':            // { x: {$mod: [2, 1]} } => x is odd test
-        case key === '$elemMatch':      // { arr: {$elemMatch: {$gt: 0, $lt: 10}} } => find element meeting conditions
+        case '$regex':          
+        case '$all':            // { arr: {$all: [1, 2, 3]} }
+        case '$size':           // { arr: {$size: 3} } => arr.length == 3
+        case '$not':            // { x: {$not: {$eq: 1}} } => x != 1
+        case '$mod':            // { x: {$mod: [2, 1]} } => x is odd test
+        case '$elemMatch':      // { arr: {$elemMatch: {$gt: 0, $lt: 10}} } => find element meeting conditions
+        case '$where':          // { $where: 'sleep(100) || true' }
+            // conditions that need to examine the value
+            shape[key] = TEST;
+            minMax.update(shape[key]);
+            break;
         default:
-            // all other conditions are tests that require examining the value,
-            // and shape = TEST was set by default
+            // assume all other $ keywords must also examine the value
+            shape[key] = TEST;
+            minMax.update(shape[key]);
             break;
+        }
+        else {
+            hasSubtree = true;
+
+            // other object compares return the comparison tree
+            if (value[key] && typeof value[key] === 'object') {
+                shape[key] = queryShape(value[key], options);
+            }
+            // non-object comparisons are looking for an exact match
+            else {
+                shape[key] = EXACT;
+                minMax.update(shape[key]);
+            }
         }
     }
 
-    return shapeNames[shape];
+    // simplify multi-$-clause conditions to the one that requires the most work, eg
+    //   { x : { $eq: 1, $lt: 1000, $nin: [10, 100] } } => RANGE
+    if (!hasSubtree) return minMax.max;
+
+    return shape;
 }
 
 // return the fields in a normalized order, to make {a:1,b:2} and {b:2,a:1} the same
@@ -105,25 +189,37 @@ function sortShape( shape ) {
 
     for (var i=0; i<keys.length; i++) {
         var key = keys[i];
-        sortedShape[key] = shape[key];
+        switch (key ) {
+        case '$and':
+        case '$or':
+        case '$nor':
+            sortedShape[key] = sortShapeArray(shape[key]);
+            break;
+        case '$query':
+        case '$orderby':
+            sortedShape[key] = sortShape(shape[key]);
+            break;
+        default:
+            sortedShape[key] = shape[key];
+            break;
+        }
     }
 
     return sortedShape;
 }
 
+// sort each shape, and sort them into a well-defined order
+function sortShapeArray( shapes ) {
+    var sortedShapes = new Array();
 
-// /** quicktest:
+    for (var i=0; i<shapes.length; i++) {
+        sortedShapes[i] = sortShape(shapes[i]);
+    }
 
-var tests = [
-    { b: 2, c: 3, a: 1 },
-    { x: 3 },
-    { x: {$gt: 2} },
-    { x: {$ne: 2} },
-    { x: {$gt: 0, $eq: 1} },
-];
-for (var i=0; i<tests.length; i++) {
-    var q = tests[i];
-    console.log(JSON.stringify(q), " ", queryShape(q, { xshapes: {EXACT: '*', RANGE: '*', TEST: '*'}} ));
+    sortedShapes.sort(function(a, b) {
+        // TODO: find a faster way
+        return Object.keys(a).join(':') <= Object.keys(b).join(':') ? -1 : 1;
+    })
+
+    return sortedShapes;
 }
-
-/**/
