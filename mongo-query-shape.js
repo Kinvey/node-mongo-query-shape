@@ -17,8 +17,8 @@ var TEST = 'TEST';              // value is tested, must scan every doc
 
 module.exports = queryShape;
 module.exports.isSame = function isSame( shape1, shape2 ) {
-    try { require('assert').deepEqual(shape1, shape2); return true }
-    catch (err) { return false }
+    // stringify is over 10x faster than deepEqual
+    return JSON.stringify(shape1) === JSON.stringify(shape2);
 }
 
 var Symbol = (typeof Symbol === 'undefined') && String || global.Symbol;
