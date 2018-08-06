@@ -48,3 +48,9 @@ Options:
 ### queryShape.isSame( shape1, shape2 )
 
 Return `true` if the two queries are structurally the same, else `false`.
+
+
+ChangeLog
+---------
+
+- 0.1.0 - first tagged version
