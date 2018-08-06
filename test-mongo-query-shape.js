@@ -59,19 +59,53 @@ module.exports = {
         var tests = [
             [ { a: 1, b: { bb: 1 } }, { a: 'EXACT', b: { bb: 'EXACT' } } ],
             [ { a: { $gt: 10, $lt: 20 } }, { a: 'RANGE' } ],
+            [ { a: { a: 1, b: 2, c: 3 } }, { a: { a: 'EXACT', b: 'EXACT', c: 'EXACT' } } ],
+            [ { $and: [ {c: 3}, {a: 1}, {d: 4}, {b: 2} ] }, { $and: [ {a:'EXACT'}, {b:'EXACT'}, {c:'EXACT'}, {d:'EXACT'} ] } ],
+            [ { $or: [ {$or: [ {c: 1}, {c: 2} ]} ] }, { $or: [ {$or: [{c:'EXACT'}, {c:'EXACT'}] } ] } ],
+
             [ { a: { $not: { $eq: 3 } } }, { a: 'TEST' } ],
             [ { a: { $not: { $ne: 3 } } }, { a: 'TEST' } ],
             [ { a: { $not: { $not: { $eq: 3 } } } }, { a: 'TEST' } ],   // heuristics is dumb, not not eq == eq, not test
-            [ { a: { a: 1, b: 2, c: 3 } }, { a: { a: 'EXACT', b: 'EXACT', c: 'EXACT' } } ],
-            [ { $and: [ {c: 3}, {a: 1}, {d: 4}, {b: 2} ] }, { $and: [ {a:'EXACT'}, {b:'EXACT'}, {c:'EXACT'}, {d:'EXACT'} ] } ],
+
+            [ { a: new String('a'), b: new Number(2) }, { a: 'EXACT', b: 'EXACT' } ],
 
             [ { a: null }, { a: 'EXACT' } ],
+        ];
+        if (global.Symbol) tests.push([ { a: Symbol('sym') }, { a: 'EXACT' } ]);
+
+        for (var i=0; i<tests.length; i++) {
+            var shape = queryShape(tests[i][0]);
+            t.deepEqual(shape, tests[i][1], t.sprintf("testing shape %O", tests[i][0]));
+        }
+
+        t.done();
+    },
+
+    'should normalize non-mongo shapes': function(t) {
+        var tests = [
+            [ { a: { $not: { b: 1 } } }, { a: { b: 'EXACT' } } ],
         ];
 
         for (var i=0; i<tests.length; i++) {
             var shape = queryShape(tests[i][0]);
             t.deepEqual(shape, tests[i][1], t.sprintf("testing shape %O", tests[i][0]));
         }
+
+        t.done();
+    },
+
+    'code should work even if Symbol is not defined': function(t) {
+        if (!global.Symbol) return t.done();
+
+        var sym = global.Symbol;
+        delete global.Symbol;
+        t.unrequire('./');
+        queryShape = require('./');
+        var shape = queryShape({ a: 1 });
+
+        global.Symbol = sym;
+        t.unrequire('./');
+        queryShape = require('./');
 
         t.done();
     },

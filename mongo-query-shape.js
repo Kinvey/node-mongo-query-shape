@@ -9,7 +9,7 @@
 
 'use strict'
 
-var Symbol = (typeof Symbol === 'undefined') && String || global.Symbol;
+var Symbol = global.Symbol || global.String;
 
 
 // shape names.  Note that they sort by restrictiveness
@@ -144,7 +144,8 @@ function valueShape( value, options ) {
             // shape of $not is the whichever is worse, its query or its complement
             var shapeComplement = { EXACT: TEST, RANGE: RANGE, TEST: TEST };
             var subqueryShape = valueShape(value[key]);
-            shape[key] = shapeComplement[subqueryShape] || subqueryShape;       // TODO: can subquery shape ever be an object?
+            // mongo would error out if subquery contained non-$ keywords, we roll with it
+            shape[key] = shapeComplement[subqueryShape] || subqueryShape;
             minMax.update(shape[key]);
             break;
         case '$ne':
