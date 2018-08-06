@@ -15,9 +15,15 @@ var RANGE = 'RANGE';            // value must fall within range, can walk index
 var TEST = 'TEST';              // value is tested, must check every doc
 
 module.exports = queryShape;
+module.exports.isSame = function isSame( shape1, shape2 ) {
+    try { require('assert').deepEqual(shape1, shape2); return true }
+    catch (err) { return false }
+}
 
 function queryShape( query, options ) {
     options = options || {};
+    // TODO: options.flatten - simplify and normalize the shape of the query, eg {} == $and:[{}] == $or:[{}]
+    // TODO: options.minimize - abstract and-lists and or-lists to a single shape
 
     var shape = {};
     var shapeNames = options.shapes || { EXACT: 'EXACT', RANGE: 'RANGE', TEST: 'TEST' };
