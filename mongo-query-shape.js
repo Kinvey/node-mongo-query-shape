@@ -19,7 +19,7 @@ var TEST = 'TEST';              // value is tested, must scan every doc
 
 module.exports = queryShape;
 module.exports.isSame = function isSame( shape1, shape2 ) {
-    // stringify is over 10x faster than deepEqual
+    // stringify is 20x faster than deepEqual
     return JSON.stringify(shape1) === JSON.stringify(shape2);
 }
 
@@ -216,7 +216,7 @@ function sortShape( shape ) {
     return sortedShape;
 }
 
-// sort each shape, and sort them into a well-defined order
+// sort each shape in the array, and sort the array into a well-defined order
 function sortShapeArray( shapes ) {
     var sortedShapes = new Array();
 
