@@ -40,5 +40,4 @@ Options:
 
 ### queryShape.isSame( shape1, shape2 )
 
-Return `true` if the objects representing the two shapes are the deep equal, `false`
-otherwise.
+Return `true` if the objects representing the two shapes are deep equal, else `false`.
