@@ -9,6 +9,7 @@
     "mongodb", "query", "Andras", "abstract", "shape"
   ],
   "repository": "git://github.com/andrasq/node-mongo-query-shape",
+  "readme": "see README.md in the repo",
 
   "dependencies": {
   },
