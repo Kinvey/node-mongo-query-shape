@@ -109,7 +109,7 @@ function queryShape( query, options ) {
  */
 function valueShape( value, options ) {
     var keys = Object.keys(value);
-    var shape = {}, hasSubtree = false;
+    var shape = {}, hasSubfield = false;
 
     var minMax = {
         min: 'ZZZZ',
@@ -165,7 +165,7 @@ function valueShape( value, options ) {
             break;
         }
         else {
-            hasSubtree = true;
+            hasSubfield = true;
 
             if (value[key] && typeof value[key] === 'object') {
                 // object compares return the comparison tree
@@ -180,11 +180,12 @@ function valueShape( value, options ) {
         }
     }
 
-    // simplify multi-$-clause conditions to the one that requires the most work, eg
-    //   { x : { $eq: 1, $lt: 1000, $nin: [10, 100] } } => RANGE
-    if (!hasSubtree) return minMax.max;
+    // multi-field value { k1: v1, k2: v2, ... } shape is an object { k1:, k2:, ... }
+    if (hasSubfield) return shape;
 
-    return shape;
+    // simplify single-field multi-$-clause conditions to the one that requires the most work, eg
+    //   { x : { $eq: 1, $lt: 1000, $nin: [10, 100] } } => RANGE
+    return minMax.max;
 }
 
 // return the fields in a normalized order, to make {a:1,b:2} and {b:2,a:1} the same

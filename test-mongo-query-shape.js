@@ -62,6 +62,7 @@ module.exports = {
             [ { a: { $not: { $eq: 3 } } }, { a: 'TEST' } ],
             [ { a: { $not: { $ne: 3 } } }, { a: 'TEST' } ],
             [ { a: { $not: { $not: { $eq: 3 } } } }, { a: 'TEST' } ],   // heuristics is dumb, not not eq == eq, not test
+            [ { a: { a: 1, b: 2, c: 3 } }, { a: { a: 'EXACT', b: 'EXACT', c: 'EXACT' } } ],
 
             [ { a: null }, { a: 'EXACT' } ],
         ];
