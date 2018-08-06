@@ -36,7 +36,10 @@ function queryShape( query, options ) {
     if (!query || typeof query !== 'object') return 'EXACT';
 
     var shape = {};
-    var shapeNames = options.shapes || { EXACT: 'EXACT', RANGE: 'RANGE', TEST: 'TEST' };
+    var shapeNames = { EXACT: 1, RANGE: 1, TEST: 1 };
+    shapeNames.EXACT = options.shapes && options.shapes.EXACT || 'EXACT';
+    shapeNames.RANGE = options.shapes && options.shapes.RANGE || 'RANGE';
+    shapeNames.TEST = options.shapes && options.shapes.TEST || 'TEST';
 
     for (var key in query) {
         var value = query[key];

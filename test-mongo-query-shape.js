@@ -43,6 +43,13 @@ module.exports = {
         t.done();
     },
 
+    'should user caller-provided shape names': function(t) {
+        var options = { shapes: { EXACT: 'e', RANGE: 'r', TEST: 't' } };
+        var shape = queryShape({ a: 1, b: {$gt: 2}, c: {$not: {$eq: 3}}}, options);
+        t.deepEqual(shape, {a: 'e', b: 'r', c: 't'});
+        t.done();
+    },
+
     'should assume TEST for unrecognized $ comparator': function(t) {
         var shape = queryShape({ a: { $someOtherComparator: {} } });
         t.deepEqual(shape, { a: 'TEST' });
