@@ -9,6 +9,8 @@
 
 'use strict'
 
+var Symbol = (typeof Symbol === 'undefined') && String || global.Symbol;
+
 
 // shape names.  Note that they sort by restrictiveness
 var EXACT = 'EXACT';            // value needs exact match, can indexed lookup
@@ -20,8 +22,6 @@ module.exports.isSame = function isSame( shape1, shape2 ) {
     // stringify is over 10x faster than deepEqual
     return JSON.stringify(shape1) === JSON.stringify(shape2);
 }
-
-var Symbol = (typeof Symbol === 'undefined') && String || global.Symbol;
 
 /*
  * analyze the mongo query and return its essential shape.
