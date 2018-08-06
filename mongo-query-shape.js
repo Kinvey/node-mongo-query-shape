@@ -57,7 +57,7 @@ function queryShape( query, options ) {
         else if (key === '$query') {
             // mongod ignores other conditions if a top-level $query is present
             // our query shape includes them, however
-            shape[key] = queryShape(query[key], options);
+            shape[key] = queryShape(value, options);
         }
 
         else if (key === '$where') {
@@ -66,7 +66,7 @@ function queryShape( query, options ) {
 
         else if (key === '$orderby') {
             // TODO: sort fields are also examined and benefit from indexing
-            shape[key] = queryShape(query[key], options);
+            shape[key] = queryShape(value, options);
         }
 
         else if (key[0] === '$') {
@@ -79,7 +79,7 @@ function queryShape( query, options ) {
             case value instanceof RegExp:
                 match = TEST;
                 break;
-            case [ Boolean, Number, String, Symbol, Date ].indexOf(value.constructor) >= 0:
+            case value && [ Boolean, Number, String, Symbol, Date ].indexOf(value.constructor) >= 0:
                 match = EXACT;
                 break;
             case value && typeof value === 'object':
@@ -135,16 +135,22 @@ function valueShape( value, options ) {
         case '$gt':
         case '$gte':
         case '$exists':
-        case '$ne':
         case '$nin':
             // conditions that can use an index scan
             shape[key] = RANGE;
             minMax.update(shape[key]);
             break;
+        case '$not':            // { x: {$not: {$gt: 100}} } => x <= 100, $not shape is complement of its test
+            // shape of $not is the whichever is worse, its query or its complement
+            var shapeComplement = { EXACT: TEST, RANGE: RANGE, TEST: TEST };
+            var subqueryShape = valueShape(value[key]);
+            shape[key] = shapeComplement[subqueryShape] || subqueryShape;       // TODO: can subquery shape ever be an object?
+            minMax.update(shape[key]);
+            break;
+        case '$ne':
         case '$regex':          
         case '$all':            // { arr: {$all: [1, 2, 3]} }
         case '$size':           // { arr: {$size: 3} } => arr.length == 3
-        case '$not':            // { x: {$not: {$eq: 1}} } => x != 1
         case '$mod':            // { x: {$mod: [2, 1]} } => x is odd test
         case '$elemMatch':      // { arr: {$elemMatch: {$gt: 0, $lt: 10}} } => find element meeting conditions
         case '$where':          // { $where: 'sleep(100) || true' }
@@ -161,12 +167,13 @@ function valueShape( value, options ) {
         else {
             hasSubtree = true;
 
-            // other object compares return the comparison tree
             if (value[key] && typeof value[key] === 'object') {
+                // object compares return the comparison tree
                 shape[key] = queryShape(value[key], options);
             }
-            // non-object comparisons are looking for an exact match
             else {
+                // non-object comparisons are looking for an exact match
+                // note that mongo does not allow mix-and-match $ and non-$ conditionals in the same object
                 shape[key] = EXACT;
                 minMax.update(shape[key]);
             }

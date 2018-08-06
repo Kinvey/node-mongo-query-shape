@@ -59,6 +59,11 @@ module.exports = {
         var tests = [
             [ { a: 1, b: { bb: 1 } }, { a: 'EXACT', b: { bb: 'EXACT' } } ],
             [ { a: { $gt: 10, $lt: 20 } }, { a: 'RANGE' } ],
+            [ { a: { $not: { $eq: 3 } } }, { a: 'TEST' } ],
+            [ { a: { $not: { $ne: 3 } } }, { a: 'TEST' } ],
+            [ { a: { $not: { $not: { $eq: 3 } } } }, { a: 'TEST' } ],   // heuristics is dumb, not not eq == eq, not test
+
+            [ { a: null }, { a: 'EXACT' } ],
         ];
 
         for (var i=0; i<tests.length; i++) {
@@ -85,7 +90,7 @@ module.exports = {
     },
 
     'should recognize existential and relational operators as range scans': function(t) {
-        var tests = [ '$lt', '$lte', '$gt', '$gte', '$exists', '$ne', {$nin: [1]} ];
+        var tests = [ '$lt', '$lte', '$gt', '$gte', '$exists', {$nin: [1]} ];
         for (var i=0; i<tests.length; i++) {
             var query = { a: {} };
             if (typeof tests[i] === 'string') query.a[tests[i]] = 1;
@@ -97,7 +102,7 @@ module.exports = {
     },
 
     'should recognize test matches': function(t) {
-        var tests = [ {$regex: '^'}, /^/, {$all: [1,2]}, {$size: 2}, {$not: {$eq: 1}}, {$mod: [2, 1]} ];
+        var tests = [ {$ne: 1}, {$regex: '^'}, /^/, {$all: [1,2]}, {$size: 2}, {$not: {$eq: 1}}, {$mod: [2, 1]} ];
         for (var i=0; i<tests.length; i++) {
             var query = { a: tests[i] };
             var shape = queryShape(query);
