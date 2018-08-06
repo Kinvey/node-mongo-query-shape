@@ -14,18 +14,20 @@ Summary
 
     var query1 = { a: 1, b: {$gt: 1, $lt: 11}, c: {$not: { $eq: 1 } } }
     var query2 = { a: 2, b: {$gt: 2, $lt: 12}, c: {$not: { $eq: 2 } } }
-    var shape;
+    var shape1, shape2;
 
-    shape = queryShape(query1);
+    shape1 = queryShape(query1);
     // => { a: 'EXACT', b: 'RANGE', c: 'TEST' }
-    shape = queryShape(query2);
+    shape2 = queryShape(query2);
     // => { a: 'EXACT', b: 'RANGE', c: 'TEST' }
 
-    shape = queryShape(query1, { shapes: { EXACT: '*', RANGE: '*', TEST: '*' });
+    shape1 = queryShape(query1, { shapes: { EXACT: '*', RANGE: '*', TEST: '*' });
     // => { a: '*', b: '*', c: '*' }
-    shape = queryShape(query2, { shapes: { EXACT: '*', RANGE: '*', TEST: '*' });
+    shape2 = queryShape(query2, { shapes: { EXACT: '*', RANGE: '*', TEST: '*' });
     // => { a: '*', b: '*', c: '*' }
 
+    queryShape.isSame(shape1, shape2)
+    // => true
 
 API
 ---

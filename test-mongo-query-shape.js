@@ -18,10 +18,12 @@ module.exports = {
             [ 1, 1, true ],
             [ {}, {}, true ],
             [ {a:1}, {a:1}, true ],
+            [ {a:'*'}, {a:'*'}, true ],
 
             [ 1, 0, false ],
             [ {a:1}, {a:1, b:2}, false ],
             [ {a:1}, {b:1}, false ],
+            [ {a:'EXACT'}, {a:'RANGE'}, false ],
         ];
 
         for (var i=0; i<tests.length; i++) {
