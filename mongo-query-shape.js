@@ -37,9 +37,9 @@ function queryShape( query, options ) {
 
     var shape = {};
     var shapeNames = { EXACT: 1, RANGE: 1, TEST: 1 };
-    shapeNames.EXACT = options.shapes && options.shapes.EXACT || 'EXACT';
-    shapeNames.RANGE = options.shapes && options.shapes.RANGE || 'RANGE';
-    shapeNames.TEST = options.shapes && options.shapes.TEST || 'TEST';
+    shapeNames.EXACT = options.shapeNames && options.shapeNames.EXACT || 'EXACT';
+    shapeNames.RANGE = options.shapeNames && options.shapeNames.RANGE || 'RANGE';
+    shapeNames.TEST = options.shapeNames && options.shapeNames.TEST || 'TEST';
 
     for (var key in query) {
         var value = query[key];

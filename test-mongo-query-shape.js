@@ -46,7 +46,7 @@ module.exports = {
     },
 
     'should user caller-provided shape names': function(t) {
-        var options = { shapes: { EXACT: 'e', RANGE: 'r', TEST: 't' } };
+        var options = { shapeNames: { EXACT: 'e', RANGE: 'r', TEST: 't' } };
         var shape = queryShape({ a: 1, b: {$gt: 2}, c: {$not: {$eq: 3}}}, options);
         t.deepEqual(shape, {a: 'e', b: 'r', c: 't'});
         t.done();
@@ -206,7 +206,7 @@ var tests = [
 ];
 for (var i=0; i<tests.length; i++) {
     var q = tests[i];
-    console.log(JSON.stringify(q), " ", queryShape(q, { xshapes: {EXACT: '*', RANGE: '*', TEST: '*'}} ));
+    console.log(JSON.stringify(q), " ", queryShape(q, { xshapeNames: {EXACT: '*', RANGE: '*', TEST: '*'}} ));
 }
 
 /**/

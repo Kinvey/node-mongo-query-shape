@@ -21,9 +21,9 @@ Summary
     shape2 = queryShape(query2);
     // => { a: 'EXACT', b: 'RANGE', c: 'TEST' }
 
-    shape1 = queryShape(query1, { shapes: { EXACT: '*', RANGE: '*', TEST: '*' });
+    shape1 = queryShape(query1, { shapeNames: { EXACT: '*', RANGE: '*', TEST: '*' });
     // => { a: '*', b: '*', c: '*' }
-    shape2 = queryShape(query2, { shapes: { EXACT: '*', RANGE: '*', TEST: '*' });
+    shape2 = queryShape(query2, { shapeNames: { EXACT: '*', RANGE: '*', TEST: '*' });
     // => { a: '*', b: '*', c: '*' }
 
     queryShape.isSame(shape1, shape2)
@@ -38,7 +38,7 @@ Return an object corresponding to the shape of the given mongo query.  Queries t
 differ only in the specific values being compared to will have the same shape.
 
 Options:
-- `shapes` - hash of shape names to use, must contain entries for 'EXACT', 'RANGE' and 'TEST'
+- `shapeNames` - hash of shape names to use, must contain entries for 'EXACT', 'RANGE' and 'TEST'
 
 ### queryShape.isSame( shape1, shape2 )
 
