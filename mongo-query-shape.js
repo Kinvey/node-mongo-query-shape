@@ -32,14 +32,14 @@ function queryShape( query, options ) {
     // TODO: options.flatten - simplify and normalize the shape of the query, eg {} == $and:[{}] == $or:[{}]
     // TODO: options.minimize - abstract and-lists and or-lists to a single shape
 
-    // sanity test the query, it should be an object
-    if (!query || typeof query !== 'object') return 'EXACT';
-
     var shape = {};
     var shapeNames = { EXACT: 1, RANGE: 1, TEST: 1 };
     shapeNames.EXACT = options.shapeNames && options.shapeNames.EXACT || 'EXACT';
     shapeNames.RANGE = options.shapeNames && options.shapeNames.RANGE || 'RANGE';
     shapeNames.TEST = options.shapeNames && options.shapeNames.TEST || 'TEST';
+
+    // sanity test the query, it should be an object
+    if (!query || typeof query !== 'object') return shapeNames.EXACT;
 
     for (var key in query) {
         var value = query[key];
