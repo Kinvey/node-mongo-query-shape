@@ -53,4 +53,5 @@ Return `true` if the two queries are structurally the same, else `false`.
 ChangeLog
 ---------
 
+- 0.1.1 - fix: use the user-specified shape name for scalar queries, too
 - 0.1.0 - first tagged version
