@@ -1,6 +1,6 @@
 {
   "name": "mongo-query-shape",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "mongo-query-shape.js",
   "description": "find the abstract shape of a mongo query",
   "author": "Andras",
